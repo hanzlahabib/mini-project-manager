@@ -1,0 +1,657 @@
+let parentElement = document.querySelector('.main-wrapper-left');
+let header = document.querySelector('.main-wrapper-left-header');
+let taskTitle = document.querySelectorAll('.task-title');
+let footer = document.querySelector('.main-wrapper-left-footer');
+let projectsWrapper = document.querySelector('.main-wrapper-left-projects-wrapper');
+let projectBox = document.querySelectorAll('.project-box');
+let checkboxs = document.querySelectorAll('#checkbox');
+let tasks = document.querySelectorAll('.task');
+let taskCounter = document.querySelector('.task-progress-count');
+let progressBar = document.querySelector('.task-progress-bar-color');
+let addTask = document.querySelector('.add-task');
+let addTaskBtnSvg = document.querySelector('.task-submit-btn svg');
+let addTaskBtn = document.querySelector('.task-submit-btn');
+let deleteTaskBtn = document.querySelectorAll('.delete-btn');
+let deleteProjectBtn = document.querySelectorAll('.project-box-delete');
+let taskListContainer = document.querySelector('.task-list-container');
+let projectCreateBtn = document.querySelector('.project-create-btn');
+let modelWrapper = document.querySelector('.model-wrapper');
+let createBtn = document.querySelector('.create-btn');
+let cancelBtn = document.querySelector('.cancel-btn');
+let projectNameInput = document.querySelector('.project-name-input');
+let projectDateInput = document.querySelector('.project-date-input');
+let deleteIconSvg = `<svg aria-hidden="true" focusable="false" data-prefix="fad" data-icon="trash" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-trash fa-w-14 fa-7x"><g class="fa-group"><path fill="currentColor" d="M53.2 467L32 96h384l-21.2 371a48 48 0 0 1-47.9 45H101.1a48 48 0 0 1-47.9-45z" class="fa-secondary"></path><path fill="currentColor" d="M0 80V48a16 16 0 0 1 16-16h120l9.4-18.7A23.72 23.72 0 0 1 166.8 0h114.3a24 24 0 0 1 21.5 13.3L312 32h120a16 16 0 0 1 16 16v32a16 16 0 0 1-16 16H16A16 16 0 0 1 0 80z" class="fa-primary"></path></g></svg>`
+let projects_list = {}
+let tasks_list = []
+let projects_holder = JSON.parse(window.localStorage.getItem('projects_holder')) || [];
+let OldTasktitle = '';
+let OldProjectTitle = '';
+let OldProjectDate = '';
+let timerStart = Date.now();
+
+
+function progress() {
+  let ar = Array.from(checkboxs);
+  let c = ar.filter(e => e.checked)
+  let width = (c.length / ar.length) * 100
+  taskCounter.innerText = `${c.length} out of ${ar.length} completed`;
+  width = isNaN(width) ? 0 : width
+  progressBar.style.width = width + '%';
+  progressBar.innerText = Math.round(width) + '%';
+}
+
+
+function init(projectId = false) {
+  projectBox = document.querySelectorAll('.project-box');
+  checkboxs = document.querySelectorAll('#checkbox');
+  tasks = document.querySelectorAll('.task');
+  taskTitle = document.querySelectorAll('.task-title');
+  progressBar = document.querySelector('.task-progress-bar-color');
+  deleteTaskBtn = document.querySelectorAll('.delete-btn');
+  deleteProjectBtn = document.querySelectorAll('.project-box-delete');
+
+  addTask.value = '';
+  projectDateInput.value = '';
+  projectNameInput.value = '';
+  projectId ? addTask.setAttribute('project-id', projectId) : ''
+  progress();
+  addEventListenerToProjectDeleteBtn();
+  addEventListenerToTasksTitle();
+  addEventListenerToProjects();
+  addEventListenerToDltBtn();
+  addEventListenerToTasks();
+  window.addEventListener('load', changeFixedElementWidth);
+  window.addEventListener('resize', changeFixedElementWidth);
+  addTask.addEventListener('focusin', activateAddBtn);
+  addTask.addEventListener('focusout', deActivateAddBtn);
+  projectCreateBtn.addEventListener('click', displayModel)
+  window.localStorage.setItem('projects_holder', JSON.stringify(projects_holder));
+}
+init();
+initProjects();
+document.addEventListener("DOMContentLoaded", ready);
+
+function ready(){
+  let mainWrapper = document.querySelector('.main-wrapper');
+  let loaderContainer = document.querySelector('.loader-container');
+  setTimeout(()=>{
+    loaderContainer.classList.add('fadeout');
+    mainWrapper.classList.remove('fadeout');
+  }, ((Date.now()-timerStart) + 150 +(Date.now()-timerStart)) * 10)
+}
+addTask.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+      event.preventDefault();
+      // Do more work
+      addTasks(event);
+  }
+});
+
+function scrollIntoView(div){
+  div.scrollIntoView({ block: 'end',  behavior: 'smooth' })
+}
+function initProjects() {
+  if (projects_holder !== '[]') {
+
+    // initilize projects
+    taskListContainer.innerText = 'Please Select Project to Add Tasks'
+    projects_holder.map(p => {
+      let { name, id, date } = p.projects_list;
+      let div = document.createElement('div');
+      let deleteBtn = document.createElement('div');
+      let h3 = document.createElement('h3');
+      let span = document.createElement('span');
+      div.classList.add('project-box');
+      h3.classList.add('project-heading');
+      h3.innerText = name
+      h3.contentEditable = true
+      span.classList.add('project-date');
+      span.contentEditable = true
+      span.innerText = date
+      deleteBtn.classList.add('project-box-delete');
+      deleteBtn.innerHTML = deleteIconSvg;
+      div.appendChild(h3);
+      div.appendChild(span);
+      div.appendChild(deleteBtn);
+      projectsWrapper.appendChild(div);
+      modelWrapper.style.opacity = '0';
+      modelWrapper.style.zIndex = '0';
+      h3.addEventListener('focusout', updateTitle);
+      h3.addEventListener('focusin', saveTitle);
+      span.addEventListener('focusout', updateTitle);
+      span.addEventListener('focusin', saveTitle);
+      div.setAttribute('project-id', id)
+    })
+    init();
+
+    // initialize tasks
+  }
+}
+function displayModel(e) {
+  e.preventDefault();
+  modelWrapper.style.opacity = '1';
+  modelWrapper.style.zIndex = '11111';
+  createBtn.addEventListener('click', createProject);
+  cancelBtn.addEventListener('click', cancelModel);
+
+}
+function createProject(e) {
+  e.preventDefault();
+  let id = 0
+  if (projectNameInput != '' && projectDateInput != '') {
+    if (projects_holder !== '[]') {
+      id = projects_holder.length + 1
+    }
+    let name = projectNameInput.value
+    let date = projectDateInput.value
+    let div = document.createElement('div');
+    let deleteBtn = document.createElement('div');
+    let h3 = document.createElement('h3');
+    let span = document.createElement('span');
+    div.classList.add('project-box');
+    h3.classList.add('project-heading');
+    h3.innerText = name
+    h3.contentEditable = true
+    span.classList.add('project-date');
+    span.contentEditable = true
+    span.innerText = date
+    deleteBtn.classList.add('project-box-delete');
+      deleteBtn.innerHTML = deleteIconSvg;
+    div.appendChild(h3);
+    div.appendChild(span);
+    div.appendChild(deleteBtn);
+    projectsWrapper.appendChild(div);
+    modelWrapper.style.opacity = '0';
+    modelWrapper.style.zIndex = '0';
+    h3.addEventListener('focusout', updateTitle);
+    h3.addEventListener('focusin', saveTitle);
+    span.addEventListener('focusout', updateTitle);
+    span.addEventListener('focusin', saveTitle);
+    projects_list = { name, date, id }
+    projects_holder.push({ projects_list, tasks_list: [], id })
+    div.setAttribute('project-id', id)
+    scrollIntoView(div);
+
+    init();
+  }
+
+}
+
+function cancelModel(e) {
+  e.preventDefault();
+  modelWrapper.style.opacity = '0';
+  modelWrapper.style.zIndex = '0';
+}
+function addEventListenerToTasks() {
+  checkboxs.forEach(e => {
+    e.addEventListener('click', taskCheck);
+  })
+}
+
+function addEventListenerToProjectDeleteBtn(){
+  deleteProjectBtn.forEach(element => {
+    element.addEventListener('click', deleteProject);
+  });
+}
+
+
+function addEventListenerToTasksTitle() {
+  taskTitle.forEach(e => {
+    e.addEventListener('focusout', updateTitle);
+    e.addEventListener('focusin', saveTitle);
+  })
+}
+function addEventListenerToProjects() {
+  projectBox.forEach(element => {
+    element.addEventListener('click', toggleActive);
+  });
+
+}
+
+function addEventListenerToDltBtn() {
+  deleteTaskBtn.forEach(element => {
+    element.addEventListener('click', deleteTask);
+  });
+
+}
+
+
+function deleteProject(e) {
+ let ans = confirm('Do you want to delete project')
+ if(ans){
+  var parents = getParents(e.target.parentElement, '.project-box');
+  let projectId = parents[0].getAttribute('project-id');
+  projects_holder.map((p,i) => {
+    if (p.id == projectId) {
+        projects_holder.splice(i, 1);
+        parents[0].remove();
+    }
+  })
+  init();
+ }else{
+   alert('project not deleted')
+ }
+}
+function saveTitle(e) {
+  e.preventDefault();
+  if (e.target.classList.contains('task-title')) {
+    OldTasktitle = e.target.textContent;
+  } else if (e.target.classList.contains('project-heading')) {
+    OldProjectTitle = e.target.textContent;
+  } else if (e.target.classList.contains('project-date')) {
+    OldProjectDate = e.target.textContent;
+  }
+  init(projectId);
+
+}
+
+function updateTitle(e) {
+  e.preventDefault();
+  if (e.target.classList.contains('task-title')) {
+    if (OldTasktitle === e.target.textContent) {
+      return
+    } else {
+      if (e.target.parentElement.classList.contains('task')) {
+        let id = e.target.parentElement.getAttribute('task-id');
+        let projectId = e.target.parentElement.getAttribute('project-id');
+        addTask.setAttribute('project-id', projectId);
+
+        projects_holder.map(p => {
+          if (p.id == projectId) {
+            p.tasks_list.map(t => {
+              if (t.id == id) {
+                t.name = e.target.textContent;
+              }
+            })
+          }
+        })
+
+      }
+    }
+  } else if (e.target.classList.contains('project-heading')) {
+    if (OldProjectTitle === e.target.textContent) {
+      return
+    } else {
+      if (e.target.parentElement.classList.contains('project-box')) {
+        let projectId = e.target.parentElement.getAttribute('project-id');
+        addTask.setAttribute('project-id', projectId);
+        projects_holder.map(p => {
+          if (p.id == projectId) {
+            p.projects_list.name = e.target.textContent;
+          }
+        })
+
+      }
+    }
+  } else if (e.target.classList.contains('project-date')) {
+    if (OldProjectTitle === e.target.textContent) {
+      return
+    } else {
+
+      if (e.target.parentElement.classList.contains('project-box')) {
+        let projectId = e.target.parentElement.getAttribute('project-id');
+        addTask.setAttribute('project-id', projectId);
+
+        projects_holder.map(p => {
+          if (p.id == projectId) {
+            p.projects_list.date = e.target.textContent;
+          }
+        })
+
+      }
+    }
+  }
+
+  init();
+}
+function deleteTask(e) {
+  if (e.target.parentElement.parentElement.classList.contains('task')) {
+    let x = e.target.parentElement.parentElement
+    x.remove();
+    let projectId = e.target.parentElement.parentElement.getAttribute('project-id');
+    let taskId = e.target.parentElement.parentElement.getAttribute('task-id');
+    projects_holder.map(p => {
+      if (p.id == projectId) {
+          p.tasks_list.map((t, i)=>{
+            if(t.id == taskId){
+             p.tasks_list.splice(i, 1)
+
+            }
+          })
+      }
+    })
+    init();
+  } else if (e.target.parentElement.parentElement.parentElement.classList.contains('task')) {
+    let x = e.target.parentElement.parentElement.parentElement;
+    x.remove();
+    let projectId = e.target.parentElement.parentElement.parentElement.getAttribute('project-id');
+    let taskId = e.target.parentElement.parentElement.parentElement.getAttribute('task-id');
+    projects_holder.map(p => {
+      if (p.id == projectId) {
+          p.tasks_list.map((t, i)=>{
+            if(t.id == taskId){
+             p.tasks_list.splice(i, 1)
+            }
+          })
+      }
+    })
+    init();
+
+  } else if (e.target.parentElement.parentElement.parentElement.parentElement.classList.contains('task')) {
+    let x = e.target.parentElement.parentElement.parentElement.parentElement;
+    x.remove();
+    let projectId = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('project-id');
+    let taskId = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('task-id');
+    projects_holder.map(p => {
+          if (p.id == projectId) {
+              p.tasks_list.map((t, i)=>{
+                if(t.id == taskId){
+                 p.tasks_list.splice(i, 1)
+                }
+              })
+          }
+        })
+    init();
+  }
+}
+function activateAddBtn(e) {
+  e.preventDefault();
+  addTaskBtnSvg.style.color = '#0984e3';
+}
+function deActivateAddBtn(e) {
+  e.preventDefault();
+  addTaskBtnSvg.style.color = '#b2bec3';
+}
+
+addTaskBtn.addEventListener('click', addTasks)
+
+function addTasks(e) {
+  let value = addTask.value;
+  id = addTask.getAttribute('project-id');
+  if (value !== '' && value.trim() !== '') {
+    if(!(id >= 1)){
+      alert('Please create Project or select if already exist')
+      return
+    }
+    let taskId = Math.random(10) * 36;
+    let div = document.createElement('div');
+    let input = document.createElement('input');
+    let h3 = document.createElement('h3');
+    let span = document.createElement('span');
+    div.classList.add('task');
+    div.setAttribute('task-id', taskId)
+    div.setAttribute('project-id', id)
+    input.id = 'checkbox'
+    input.type = 'checkbox'
+    input.name = value;
+    h3.classList.add('task-title');
+    h3.innerText = value
+    h3.contentEditable = true
+    span.classList.add('delete-btn');
+    span.innerHTML = deleteIconSvg
+    div.appendChild(input);
+    div.appendChild(h3);
+    div.appendChild(span)
+    taskListContainer.appendChild(div)
+    let task = { name: value, complete: input.checked, id: taskId }
+    projects_holder.map(p => {
+      if (p.id == id) {
+        p.tasks_list.push({ ...task })
+      }
+    })
+    scrollIntoView(div);
+    init();
+  } else {
+    alert('Make sure Task is not empty');
+  }
+
+}
+
+function initTasks(project_id) {
+  if(project_id == null){
+    taskListContainer.innerText = 'Please Select Project to Add Tasks'
+    return
+  }
+  id = project_id;
+  projects_holder.map(p => {
+    if (p.id == id) {
+    taskListContainer.innerText = ''
+    p.tasks_list.map(t => {
+        let { name, id, complete } = t
+        value = name;
+        taskId = id;
+        let div = document.createElement('div');
+        let input = document.createElement('input');
+        let h3 = document.createElement('h3');
+        let span = document.createElement('span');
+        div.classList.add('task');
+        complete ? h3.classList.add('task-cleared'): ''
+        div.setAttribute('task-id', taskId)
+        div.setAttribute('project-id', project_id)
+        input.id = 'checkbox'
+        input.type = 'checkbox'
+        input.name = value;
+        input.checked = complete
+        h3.classList.add('task-title');
+        h3.innerText = value
+        h3.contentEditable = true
+        span.classList.add('delete-btn');
+        span.innerHTML = deleteIconSvg
+        div.appendChild(input);
+        div.appendChild(h3);
+        div.appendChild(span)
+        taskListContainer.appendChild(div)
+      })
+    }
+  })
+
+}
+function taskCheck(e) {
+  if (e.target.checked) {
+    if (e.target.parentElement.classList.contains('task')) {
+      let projectId = e.target.parentElement.getAttribute('project-id');
+      let taskId = e.target.parentElement.getAttribute('task-id');
+      let lastElem = e.target.parentElement.querySelector('.task-title');
+      lastElem.classList.add('task-cleared');
+      projects_holder.map(p => {
+        if (p.id == projectId) {
+          p.tasks_list.map(t => {
+            if (t.id == taskId) {
+              t.complete = e.target.checked;
+            }
+          })
+        }
+      })    }
+  } else {
+    if (e.target.parentElement.classList.contains('task')) {
+      let projectId = e.target.parentElement.getAttribute('project-id');
+      let taskId = e.target.parentElement.getAttribute('task-id');
+      let lastElem = e.target.parentElement.querySelector('.task-title');
+      lastElem.classList.remove('task-cleared');
+      projects_holder.map(p => {
+        if (p.id == projectId) {
+          p.tasks_list.map(t => {
+            if (t.id == taskId) {
+              t.complete = e.target.checked;
+            }
+          })
+        }
+      })
+    }
+  }
+init();
+}
+function toggleActive(e) {
+  e.preventDefault()
+  let id = e.target.getAttribute('project-id')
+  addTask.setAttribute('project-id', id)
+
+  projectBox.forEach(pro => {
+    pro.classList.remove('active-project');
+  })
+  initTasks(null);
+
+  if (!e.target.classList.contains('active-project') && e.target.classList.contains('project-box')) {
+    e.target.classList.add('active-project');
+    initTasks(id);
+  }
+  if (!e.target.parentElement.classList.contains('active-project') && e.target.parentElement.classList.contains('project-box')) {
+    e.target.parentElement.classList.add('active-project');
+    initTasks(id);
+  }
+
+  init();
+}
+function changeFixedElementWidth() {
+  const addTaskParentElement = addTask.getBoundingClientRect().width;
+  const parentElementWidth = parentElement.getBoundingClientRect().width;
+  header.style.width = parentElementWidth + 'px';
+  footer.style.width = parentElementWidth + 'px';
+  addTaskBtn.style.left = addTaskParentElement + 'px';
+}
+
+var getParentsUntil = function (elem, parent, selector) {
+
+  var parents = [];
+  if ( parent ) {
+      var parentType = parent.charAt(0);
+  }
+  if ( selector ) {
+      var selectorType = selector.charAt(0);
+  }
+
+  // Get matches
+  for ( ; elem && elem !== document; elem = elem.parentNode ) {
+
+      // Check if parent has been reached
+      if ( parent ) {
+
+          // If parent is a class
+          if ( parentType === '.' ) {
+              if ( elem.classList.contains( parent.substr(1) ) ) {
+                  break;
+              }
+          }
+
+          // If parent is an ID
+          if ( parentType === '#' ) {
+              if ( elem.id === parent.substr(1) ) {
+                  break;
+              }
+          }
+
+          // If parent is a data attribute
+          if ( parentType === '[' ) {
+              if ( elem.hasAttribute( parent.substr(1, parent.length - 1) ) ) {
+                  break;
+              }
+          }
+
+          // If parent is a tag
+          if ( elem.tagName.toLowerCase() === parent ) {
+              break;
+          }
+
+      }
+
+      if ( selector ) {
+
+          // If selector is a class
+          if ( selectorType === '.' ) {
+              if ( elem.classList.contains( selector.substr(1) ) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is an ID
+          if ( selectorType === '#' ) {
+              if ( elem.id === selector.substr(1) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is a data attribute
+          if ( selectorType === '[' ) {
+              if ( elem.hasAttribute( selector.substr(1, selector.length - 1) ) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is a tag
+          if ( elem.tagName.toLowerCase() === selector ) {
+              parents.push( elem );
+          }
+
+      } else {
+          parents.push( elem );
+      }
+
+  }
+
+  // Return parents if any exist
+  if ( parents.length === 0 ) {
+      return null;
+  } else {
+      return parents;
+  }
+
+};
+
+/**
+ * Get all DOM element up the tree that contain a class, ID, or data attribute
+ * @param  {Node} elem The base element
+ * @param  {String} selector The class, id, data attribute, or tag to look for
+ * @return {Array} Null if no match
+ */
+var getParents = function (elem, selector) {
+
+  var parents = [];
+  var firstChar;
+  if ( selector ) {
+      firstChar = selector.charAt(0);
+  }
+
+  // Get matches
+  for ( ; elem && elem !== document; elem = elem.parentNode ) {
+      if ( selector ) {
+
+          // If selector is a class
+          if ( firstChar === '.' ) {
+              if ( elem.classList.contains( selector.substr(1) ) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is an ID
+          if ( firstChar === '#' ) {
+              if ( elem.id === selector.substr(1) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is a data attribute
+          if ( firstChar === '[' ) {
+              if ( elem.hasAttribute( selector.substr(1, selector.length - 1) ) ) {
+                  parents.push( elem );
+              }
+          }
+
+          // If selector is a tag
+          if ( elem.tagName.toLowerCase() === selector ) {
+              parents.push( elem );
+          }
+
+      } else {
+          parents.push( elem );
+      }
+
+  }
+
+  // Return parents if any exist
+  if ( parents.length === 0 ) {
+      return null;
+  } else {
+      return parents;
+  }
+
+};

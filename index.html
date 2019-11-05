@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="./css/main.css">
+  <!-- <script src="https://kit.fontawesome.com/edeca98600.js" crossorigin="anonymous"></script> -->
+  <title>Personal Todo</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="loader-container">
+      <div class="loader"></div>
+  </div>
+    <div class="model-wrapper">
+      <div class="model">
+        <div class="model-header">
+          <h3 class="model-header-title">
+            Create New Project
+          </h3>
+        </div>
+        <div class="model-body">
+          <input type="text" placeholder="Project Name" class="project-name-input">
+          <input type="date" name="project-date" id="project-date" class="project-date-input">
+        </div>
+        <div class="model-footer">
+          <div class="create-btn">Create</div>
+          <div class="cancel-btn">Cancel</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-wrapper fadeout">
+      <div class="main-wrapper-left">
+        <div class="main-wrapper-left-header">
+          <h3 class="heading">
+            Projects
+          </h3>
+        </div>
+        <div class="main-wrapper-left-projects-wrapper">
+          <div class="project-box" project-id='1'>
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <!-- <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Invoice to do</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box active-project">
+            <h3 class="project-heading">Home Life</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div>
+          <div class="project-box">
+            <h3 class="project-heading">Project Leads</h3>
+            <span class="project-date">13/09/2019</span>
+          </div> -->
+        </div>
+        <div class="main-wrapper-left-footer">
+          <h3 class="heading">
+            <span class="project-create-btn">
+              <svg aria-hidden="true" focusable="false" data-prefix="fal" data-icon="plus-circle" role="img"
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+                class="svg-inline--fa fa-plus-circle fa-w-16 fa-9x">
+                <path fill="currentColor"
+                  d="M384 250v12c0 6.6-5.4 12-12 12h-98v98c0 6.6-5.4 12-12 12h-12c-6.6 0-12-5.4-12-12v-98h-98c-6.6 0-12-5.4-12-12v-12c0-6.6 5.4-12 12-12h98v-98c0-6.6 5.4-12 12-12h12c6.6 0 12 5.4 12 12v98h98c6.6 0 12 5.4 12 12zm120 6c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-32 0c0-119.9-97.3-216-216-216-119.9 0-216 97.3-216 216 0 119.9 97.3 216 216 216 119.9 0 216-97.3 216-216z"
+                  class=""></path>
+              </svg>
+            </span>
+          </h3>
+        </div>
+      </div>
+      <div class="main-wrapper-right">
+        <div class="main-wrapper-right-projects-wrapper">
+          <form class="task-input">
+            <input type="text" placeholder="Add Task" class='add-task' data-project-id="">
+            <span class="task-submit-btn">
+              <svg aria-hidden="true" focusable="false" data-prefix="fal" data-icon="plus-circle" role="img"
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+                class="svg-inline--fa fa-plus-circle fa-w-16 fa-9x">
+                <path fill="currentColor"
+                  d="M384 250v12c0 6.6-5.4 12-12 12h-98v98c0 6.6-5.4 12-12 12h-12c-6.6 0-12-5.4-12-12v-98h-98c-6.6 0-12-5.4-12-12v-12c0-6.6 5.4-12 12-12h98v-98c0-6.6 5.4-12 12-12h12c6.6 0 12 5.4 12 12v98h98c6.6 0 12 5.4 12 12zm120 6c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-32 0c0-119.9-97.3-216-216-216-119.9 0-216 97.3-216 216 0 119.9 97.3 216 216 216 119.9 0 216-97.3 216-216z"
+                  class=""></path>
+              </svg>
+            </span>
+          </form>
+          <div class="task-list-container">
+            <div class="task">
+              <input type="checkbox" name="task1" id="checkbox">
+              <h3 contenteditable="true" class="task-title">Make your Own Todo Managing App</h3>
+              <span class="delete-btn">
+                <svg aria-hidden="true" focusable="false" data-prefix="fad" data-icon="trash" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-trash fa-w-14 fa-7x"><g class="fa-group"><path fill="currentColor" d="M53.2 467L32 96h384l-21.2 371a48 48 0 0 1-47.9 45H101.1a48 48 0 0 1-47.9-45z" class="fa-secondary"></path><path fill="currentColor" d="M0 80V48a16 16 0 0 1 16-16h120l9.4-18.7A23.72 23.72 0 0 1 166.8 0h114.3a24 24 0 0 1 21.5 13.3L312 32h120a16 16 0 0 1 16 16v32a16 16 0 0 1-16 16H16A16 16 0 0 1 0 80z" class="fa-primary"></path></g></svg>
+              </span>
+            </div>
+          </div>
+          <div class="task-progress">
+            <span class="task-progress-count"></span>
+            <div class="task-progress-bar">
+              <div class="task-progress-bar-color"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="./js//main.js"></script>
+</body>
+
+</html>

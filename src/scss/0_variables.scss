@@ -1,0 +1,17 @@
+$primary: #0984e3;
+$secondary: #b2bec3;
+$bgc : #3498db;
+
+
+// mixins
+
+@mixin addtaskInput {
+  color:$secondary;
+  font-size: 30px;
+
+}
+@mixin addtaskInputSm {
+  color:$secondary;
+  font-size: 16px;
+
+}
